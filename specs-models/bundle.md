@@ -1,0 +1,63 @@
+{
+  "project": {
+    "name": "demo",
+    "basePackage": "com.example.demo",
+    "language": "java"
+  },
+  "features": [
+    {
+      "name": "user",
+
+      "entity": {
+        "name": "User",
+        "tableName": "users",
+        "fields": [
+          { "name": "id", "type": "long" },
+          { "name": "email", "type": "string", "unique": true },
+          { "name": "password", "type": "string" }
+        ]
+      },
+
+      "repository": {
+        "enabled": true,
+        "operations": [
+          {
+            "name": "findByEmail",
+            "type": "find",
+            "returnType": "entity",
+            "criteria": [
+              { "field": "email", "operator": "eq" }
+            ]
+          }
+        ]
+      },
+
+      "service": {
+        "enabled": true,
+        "methods": [
+          {
+            "name": "getByEmail",
+            "repositoryOperation": "findByEmail",
+            "transactional": true
+          }
+        ]
+      },
+
+      "controller": {
+        "basePath": "/users",
+        "endpoints": [
+          {
+            "name": "getUserByEmail",
+            "method": "GET",
+            "path": "/by-email",
+            "serviceMethod": "getByEmail"
+          }
+        ]
+      },
+
+      "security": {
+        "defaultRoles": ["ADMIN"]
+      }
+    }
+  ]
+}

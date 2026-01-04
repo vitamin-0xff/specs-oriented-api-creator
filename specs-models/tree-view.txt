@@ -1,0 +1,23 @@
+ApplicationSpec
+├── project
+│   ├── name
+│   ├── basePackage
+│   └── language
+└── features[]
+    ├── name
+    ├── entity
+    │   ├── name
+    │   ├── tableName
+    │   └── fields[]
+    ├── repository
+    │   ├── enabled
+    │   └── operations[]
+    ├── service
+    │   ├── enabled
+    │   └── methods[]
+    ├── controller
+    │   ├── basePath
+    │   └── endpoints[]
+    └── security
+        ├── defaultRoles
+        └── rules[]
