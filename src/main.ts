@@ -11,12 +11,15 @@ if (!specPath || !dtoSpec) {
 
 try {
   const content = await readContentFromFile(specPath);
+  const jsonContent = JSON.parse(content);
   const dtos = await readContentFromFile(dtoSpec);
+  const parsedDtos = JSON.parse(dtos);
 
-  const returnType = parseFeature(content, dtos);
+  const returnType = parseFeature(jsonContent, parsedDtos);
   console.log(returnType);
 
 } catch (err: unknown) {
+  // @ts-ignore
   console.error(err?.message ?? "An unknown error occurred");
   console.log((err as Error).stack);
   Deno.exit(1);

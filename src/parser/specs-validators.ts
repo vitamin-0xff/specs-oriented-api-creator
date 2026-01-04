@@ -133,7 +133,13 @@ export const dtoSchema = z.object({
       field: z.string(),
       mode: z.enum(["ID", "EMBEDDED"]),
       dtoRef: z.string().optional(),
-    })
+    }).refine(
+      (rel) => !(rel.mode === "EMBEDDED" && !rel.dtoRef),
+      { message: "Relation with EMBEDDED mode must define dtoRef" }
+    ).refine(
+      (rel) => !(rel.mode === "ID" && rel.dtoRef),
+      { message: "Relation with ID mode must not define dtoRef" }
+    )
   ).optional(),
   description: z.string().optional(),
 }).refine(
