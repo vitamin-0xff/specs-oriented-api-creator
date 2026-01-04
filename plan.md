@@ -187,7 +187,7 @@ Generate readable Spring Boot source code.
 - [ ] Implement generators:
   - EntityGenerator [DONE]
   - RepositoryGenerator [DONE]
-  - ServiceGenerator
+  - ServiceGenerator [DONE]
   - ControllerGenerator
   - SecurityGenerator
 - [ ] Generate package structure
