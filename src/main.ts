@@ -1,8 +1,18 @@
-export function add(a: number, b: number): number {
-  return a + b;
+import { parseAndValidateSpec } from "./parser/index.ts";
+
+const specPath = Deno.args[0];
+
+if (!specPath) {
+  console.error("Usage: deno run src/main.ts <spec.json>");
+  Deno.exit(1);
 }
 
-// Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
-if (import.meta.main) {
-  console.log("Add 2 + 3 =", add(2, 3));
+try {
+  const spec = await parseAndValidateSpec(specPath);
+  console.log("Specification loaded successfully");
+  console.log(`Features: ${spec.features.length}`);
+} catch (err) {
+  console.error(err.message);
+  Deno.exit(1);
 }
+

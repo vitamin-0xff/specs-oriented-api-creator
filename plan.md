@@ -58,7 +58,7 @@ spring-boot-generator/
 
 ---
 
-## 4. Phase 1 – Specification Model
+## 4. Phase 1 – Specification Model [DONE]
 
 ### Goal
 Define the **frozen v1 specification model** used by frontend and backend.
