@@ -122,7 +122,7 @@ Convert JSON specification into typed models.
 
 ---
 
-## 7. Phase 4 – Intermediate Representation (IR)
+## 7. Phase 4 – Intermediate Representation (IR) [DONE]
 
 ### Goal
 Create a resolved, framework-neutral model.
