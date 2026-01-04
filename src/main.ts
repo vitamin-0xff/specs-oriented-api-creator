@@ -1,11 +1,14 @@
 import { generateIR } from "./ir/ir-generator.ts";
 import { parseAndValidateSpec } from "./parser/index.ts";
 import { transformApplication } from "./transformers/pipleline.ts";
+import { generateEntity } from "./generators/entity.generator.ts";
 
 const specPath = Deno.args[0];
+const outputPath = Deno.args[1] ?? "./generated";
+
 
 if (!specPath) {
-  console.error("Usage: deno run src/main.ts <spec.json>");
+  console.error("Usage: deno run --allow-write --allow-read src/main.ts <spec.json> [outputPath]");
   Deno.exit(1);
 }
 
@@ -23,6 +26,11 @@ try {
   console.log("Applied Spring-aware transformers successfully");
   console.log(`Transformed ${transformedFeatures.length} feature(s)`);
   console.log(transformedFeatures);
+
+  // Generate Entities
+  for (const feature of transformedFeatures) {
+    await generateEntity(feature, outputPath, ir.basePackage);
+  }
 
 
 } catch (err: unknown) {
