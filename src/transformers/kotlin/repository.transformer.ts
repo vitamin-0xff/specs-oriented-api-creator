@@ -1,15 +1,11 @@
+// src/transformers/kotlin/repository.transformer.ts
+
 import {
   EntityIR,
   RepositoryIR,
-} from "../ir/java-spring-ir.ts";
+} from "../../ir/kotlin-spring-ir.ts";
 
-/**
- * Transforms an EntityIR into a Java/Spring-specific RepositoryIR.
- * @param entityIr The EntityIR object for the feature's entity.
- * @param basePackage The base package name for the generated code.
- * @returns A RepositoryIR object.
- */
-export function transformRepository(
+export function transformKotlinRepository(
   entityIr: EntityIR,
   basePackage: string
 ): RepositoryIR {
@@ -17,28 +13,24 @@ export function transformRepository(
   const repositoryName = `${entityName}Repository`;
   const imports = new Set<string>();
 
-  // Add imports for JpaRepository and the entity itself
   imports.add("org.springframework.data.jpa.repository.JpaRepository");
   imports.add("org.springframework.stereotype.Repository");
-  imports.add(entityIr.packageName + "." + entityIr.className);
+  imports.add(`${entityIr.packageName}.${entityIr.className}`);
 
   const idType = entityIr.idField.type;
   if (idType === "UUID") {
     imports.add("java.util.UUID");
   }
 
-
   return {
     packageName: `${basePackage}.repository`,
     className: repositoryName,
     imports,
     annotations: [{ name: "Repository" }],
-    accessModifier: "public",
     type: "interface",
-    // The repository extends JpaRepository<Entity, IdType>
     extends: `JpaRepository<${entityName}, ${idType}>`,
-    fields: [], // Repositories are interfaces, no fields
-    methods: [], // Custom methods can be added later
+    fields: [],
+    functions: [],
     entity: entityIr,
   };
 }

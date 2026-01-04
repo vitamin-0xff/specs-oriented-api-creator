@@ -253,3 +253,11 @@ export const featureSchema = z.object({
 });
 
 export type FeatureIR = z.infer<typeof featureSchema>;
+export type DtoIR = z.infer<typeof dtoSchema>;
+export type OperationIR = z.infer<typeof operationSchema>;
+export type FieldIR = z.infer<typeof fieldSchema>;
+export type RelationIR = z.infer<typeof relationSchema>;
+export type ParamIR = z.infer<typeof paramSchema>;
+export type CascadeOption = z.infer<typeof cascadeOptionSchema>;
+export type DtoSpecIR = z.infer<typeof dtoSchema>;
+export type IDFieldIR = z.infer<typeof idFieldSchema>;

@@ -1,70 +1,61 @@
+// src/transformers/kotlin/controller.transformer.ts
+
 import {
   ControllerIR,
   ServiceIR,
   DtoIR,
-  JavaMethod,
-  JavaMethodParameter,
-} from "../ir/java-spring-ir.ts";
-import { FeatureIR, OperationIR } from "../parser/specs-validators.ts";
-import { upperFirst, camelCase } from "../utils/capitalize.ts";
+  KotlinFunction,
+  KotlinParameter,
+} from "../../ir/kotlin-spring-ir.ts";
+import { FeatureIR } from "../../parser/specs-validators.ts";
+import { camelCase, upperFirst } from "../../utils/capitalize.ts";
 
-/**
- * Creates the controller methods based on the operations defined in the feature spec.
- */
-function createControllerMethods(
+function createControllerFunctions(
   featureSpec: FeatureIR,
   serviceIr: ServiceIR,
   dtosIr: DtoIR[],
   imports: Set<string>
-): JavaMethod[] {
-  const methods: JavaMethod[] = [];
+): KotlinFunction[] {
+  const functions: KotlinFunction[] = [];
   const serviceVar = camelCase(serviceIr.className);
   const pluralizedFeatureName = `${featureSpec.name.toLowerCase()}s`;
 
   for (const op of featureSpec.operations) {
-    const params: JavaMethodParameter[] = [];
-    let returnDtoName = "Void";
-    let responseWrapper = "ResponseEntity";
+    const params: KotlinParameter[] = [];
+    let returnDtoName = "Unit";
     
-    // Determine Response Type
     if (op.output) {
         const outputDto = dtosIr.find(d => d.className === op.output);
         if (outputDto) {
             returnDtoName = op.isArray ? `List<${outputDto.className}>` : outputDto.className;
             imports.add(`${outputDto.packageName}.${outputDto.className}`);
-            if (op.isArray) imports.add("java.util.List");
         }
     }
+    const returnType = `ResponseEntity<${returnDtoName}>`;
     imports.add("org.springframework.http.ResponseEntity");
-    const returnType = `${responseWrapper}<${returnDtoName}>`;
 
-    // Determine path and HTTP method annotation
     let methodPath = op.path;
-    // Strip the pluralized feature name if it's already in the path (e.g., /users/{id} -> /{id})
     if (methodPath.startsWith(`/${pluralizedFeatureName}`)) {
         methodPath = methodPath.substring(`/${pluralizedFeatureName}`.length);
     }
     if (methodPath === "") {
-        methodPath = "/"; // If path becomes empty, default to root
+        methodPath = "/";
     }
 
     const httpMethodAnnotation = { name: `${upperFirst(op.method.toLowerCase())}Mapping`, properties: [`"${methodPath}"`] };
     imports.add(`org.springframework.web.bind.annotation.${httpMethodAnnotation.name}`);
 
-    // Determine method parameters from spec
     if (op.pathParams) {
         for (const p of op.pathParams) {
             imports.add("org.springframework.web.bind.annotation.PathVariable");
-            params.push({ name: p.name, type: p.type, annotations: [{ name: "PathVariable", properties: [`"${p.name}"`] }] });
-            if (p.type === "UUID") { // Added for UUID import
-                imports.add("java.util.UUID");
-            }
+            params.push({ name: p.name, type: p.type, isNullable: false, annotations: [{ name: "PathVariable", properties: [`"${p.name}"`] }] });
+            if (p.type === "UUID") imports.add("java.util.UUID");
         }
     }
-     if (op.queryParams) {
+    if (op.queryParams) {
         for (const p of op.queryParams) {
             imports.add("org.springframework.web.bind.annotation.RequestParam");
-            params.push({ name: p.name, type: p.type, annotations: [{ name: "RequestParam", properties: [`"${p.name}"`] }] });
+            params.push({ name: p.name, type: p.type, isNullable: !(p.required ?? true), annotations: [{ name: "RequestParam", properties: [`"${p.name}"`] }] });
         }
     }
     if (op.input) {
@@ -72,31 +63,27 @@ function createControllerMethods(
         if (inputDto) {
             imports.add("org.springframework.web.bind.annotation.RequestBody");
             imports.add(`${inputDto.packageName}.${inputDto.className}`);
-            params.push({ name: camelCase(inputDto.className), type: inputDto.className, annotations: [{ name: "RequestBody" }] });
+            params.push({ name: camelCase(inputDto.className), type: inputDto.className, isNullable: false, annotations: [{ name: "RequestBody" }] });
         }
     }
     
     const serviceCallParams = params.map(p => p.name).join(", ");
-    const body = `return ResponseEntity.ok(${serviceVar}.${op.name}(${serviceCallParams}));`;
+    const body = `return ResponseEntity.ok(${serviceVar}.${op.name}(${serviceCallParams}))`;
 
-    methods.push({
+    functions.push({
       name: op.name,
       returnType: returnType,
-      accessModifier: "public",
+      isSuspend: true,
       parameters: params,
       annotations: [httpMethodAnnotation],
       body: body,
     });
   }
 
-  return methods;
+  return functions;
 }
 
-
-/**
- * Transforms feature specs and component IRs into a Java/Spring-specific ControllerIR.
- */
-export function transformController(
+export function transformKotlinController(
   featureSpec: FeatureIR,
   serviceIr: ServiceIR,
   dtosIr: DtoIR[],
@@ -105,49 +92,34 @@ export function transformController(
   const controllerName = `${serviceIr.className.replace("Service", "")}Controller`;
   const imports = new Set<string>();
 
-  // Add default annotations
   imports.add("org.springframework.web.bind.annotation.RestController");
   imports.add("org.springframework.web.bind.annotation.RequestMapping");
   
   const basePath = `/api/v1/${featureSpec.name.toLowerCase()}s`;
-  const annotations = [
-      { name: "RestController" },
-      { name: "RequestMapping", properties: [`"${basePath}"`] },
-  ];
   
-  // Define dependency on the service
   const dependencies = [{
       name: camelCase(serviceIr.className),
       type: serviceIr.className,
-      accessModifier: "private",
-      keywords: ["final"],
+      isMutable: false,
+      isNullable: false,
       annotations: [],
       isRelation: false,
   }];
   imports.add(`${serviceIr.packageName}.${serviceIr.className}`);
 
-  const methods = createControllerMethods(featureSpec, serviceIr, dtosIr, imports);
-
-  // Add constructor for dependency injection
-  const constructor: JavaMethod = {
-      name: controllerName,
-      returnType: "",
-      accessModifier: "public",
-      parameters: dependencies.map(d => ({ name: d.name, type: d.type })),
-      annotations: [{ name: "Autowired" }],
-      body: dependencies.map(d => `this.${d.name} = ${d.name};`).join("\n"),
-  };
-  imports.add("org.springframework.beans.factory.annotation.Autowired");
+  const functions = createControllerFunctions(featureSpec, serviceIr, dtosIr, imports);
 
   return {
     packageName: `${basePackage}.controller`,
     className: controllerName,
     imports,
-    annotations,
-    accessModifier: "public",
+    annotations: [
+      { name: "RestController" },
+      { name: "RequestMapping", properties: [`"${basePath}"`] },
+    ],
     type: "class",
-    fields: dependencies,
-    methods: [constructor, ...methods],
+    fields: dependencies.map(d => ({...d, name: `private val ${d.name}`})),
+    functions: functions,
     basePath: basePath,
     dependencies: dependencies,
   };

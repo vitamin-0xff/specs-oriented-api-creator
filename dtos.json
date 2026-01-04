@@ -14,7 +14,7 @@
       "sourceEntity": "User",
       "exclude": ["password"],
       "relations": [
-        {"field": "roles", "mode": "ID", "dtoRef": "RoleReadDTO"}
+        {"field": "roles", "mode": "ID"}
       ]
     }
   ]

@@ -1,25 +1,24 @@
+// src/transformers/kotlin/entity.transformer.ts
+
 import {
   FeatureIR,
-  FieldIR,
-  RelationIR,
-} from "../parser/specs-validators.ts";
+  FieldIR as SpecFieldIR,
+  RelationIR as SpecRelationIR,
+} from "../../parser/specs-validators.ts";
 import {
   EntityIR,
-  JavaAnnotation,
-  JavaField,
-} from "../ir/java-spring-ir.ts";
-import { upperFirst } from "../utils/capitalize.ts";
+  KotlinAnnotation,
+  KotlinField,
+} from "../../ir/kotlin-spring-ir.ts";
+import { upperFirst } from "../../utils/capitalize.ts";
 
-/**
- * Maps a spec field type to a Java type.
- */
-function mapSpecTypeToJavaType(field: FieldIR): string {
+function mapSpecTypeToKotlinType(field: SpecFieldIR): string {
   switch (field.type) {
     case "String":
     case "Text":
       return "String";
     case "Integer":
-      return "Integer";
+      return "Int";
     case "Long":
       return "Long";
     case "Double":
@@ -29,24 +28,19 @@ function mapSpecTypeToJavaType(field: FieldIR): string {
     case "Date":
       return "LocalDate";
     case "Enum":
-      // Assuming enum name is derived from feature and field name
       return `${upperFirst(field.name)}Enum`;
     case "Id":
       return field.concreteType === "UUID" ? "UUID" : "Long";
     default:
-      throw new Error(`Unknown field type: ${field}`);
+      throw new Error(`Unknown field type: ${field.type}`);
   }
 }
 
-/**
- * Transforms a single specification field into a JavaField for the IR.
- */
-function transformSpecField(field: FieldIR, imports: Set<string>): JavaField {
-  const annotations: JavaAnnotation[] = [];
-  let isIdField = false;
-
+function transformSpecField(field: SpecFieldIR, imports: Set<string>): KotlinField {
+  const annotations: KotlinAnnotation[] = [];
+  let isNullable = field.nullable ?? false;
+  
   if (field.type === "Id") {
-    isIdField = true;
     annotations.push({ name: "Id" });
     const strategy = field.advanced?.generationStrategy || "AUTO";
     annotations.push({
@@ -56,8 +50,8 @@ function transformSpecField(field: FieldIR, imports: Set<string>): JavaField {
     imports.add("javax.persistence.Id");
     imports.add("javax.persistence.GeneratedValue");
     imports.add("javax.persistence.GenerationType");
+    isNullable = true; // IDs are nullable before being persisted
   } else {
-    // Add @Column for other fields if needed, e.g., for unique constraints
     if (field.unique) {
       annotations.push({ name: "Column", properties: ["unique = true"] });
       imports.add("javax.persistence.Column");
@@ -69,7 +63,7 @@ function transformSpecField(field: FieldIR, imports: Set<string>): JavaField {
     imports.add("javax.persistence.Enumerated");
     imports.add("javax.persistence.EnumType");
   }
-  
+
   if (field.type === "Date") {
     imports.add("java.time.LocalDate");
   }
@@ -80,21 +74,18 @@ function transformSpecField(field: FieldIR, imports: Set<string>): JavaField {
 
   return {
     name: field.name,
-    type: mapSpecTypeToJavaType(field),
+    type: mapSpecTypeToKotlinType(field),
+    isNullable: isNullable,
+    isMutable: true, // `var` for JPA compatibility
     annotations,
-    accessModifier: "private",
     isRelation: false,
   };
 }
 
-/**
- * Transforms a single specification relation into a JavaField for the IR.
- */
-function transformSpecRelation(relation: RelationIR, imports: Set<string>): JavaField {
-  const annotations: JavaAnnotation[] = [];
+function transformSpecRelation(relation: SpecRelationIR, imports: Set<string>): KotlinField {
+  const annotations: KotlinAnnotation[] = [];
   const { type, fetch, cascade, mappedBy, name, targetEntity } = relation;
 
-  // 1. Add relation annotation (@OneToMany, etc.)
   annotations.push({ name: type });
   imports.add(`javax.persistence.${type}`);
 
@@ -108,64 +99,46 @@ function transformSpecRelation(relation: RelationIR, imports: Set<string>): Java
   }
   if (cascade && cascade.length > 0) {
     const cascadeString = cascade.map(c => `CascadeType.${c}`).join(", ");
-    annotationProperties.push(`cascade = {${cascadeString}}`);
+    annotationProperties.push(`cascade = [${cascadeString}]`); // Kotlin array syntax
     imports.add("javax.persistence.CascadeType");
   }
-  // Add properties to the main relation annotation
+
   if (annotationProperties.length > 0) {
     annotations[0].properties = annotationProperties;
   }
 
-  // 2. Determine Java type
-  let javaType = upperFirst(targetEntity);
+  let kotlinType = upperFirst(targetEntity);
   if (type === "OneToMany" || type === "ManyToMany") {
-    javaType = `List<${javaType}>`;
-    imports.add("java.util.List");
+    kotlinType = `List<${kotlinType}>`;
   }
 
   return {
     name: name,
-    type: javaType,
+    type: kotlinType,
+    isNullable: relation.optional ?? false,
+    isMutable: true,
     annotations,
-    accessModifier: "private",
     isRelation: true,
     relationTargetEntity: upperFirst(targetEntity),
   };
 }
 
-
-/**
- * Transforms a generic FeatureIR into a Java/Spring-specific EntityIR.
- * @param feature The input feature from the parser.
- * @param basePackage The base package name for the generated code (e.g., "com.example.myapp").
- * @returns An EntityIR object.
- */
-export function transformEntity(
+export function transformKotlinEntity(
   feature: FeatureIR,
   basePackage: string
 ): EntityIR {
   const entityName = upperFirst(feature.name);
   const imports = new Set<string>();
-  const entityAnnotations: JavaAnnotation[] = [];
+  const entityAnnotations: KotlinAnnotation[] = [];
 
-  // Add basic entity annotations
   entityAnnotations.push({ name: "Entity" });
   imports.add("javax.persistence.Entity");
 
   const tableName = feature.tableName || `${feature.name.toLowerCase()}s`;
   entityAnnotations.push({ name: "Table", properties: [`name = "${tableName}"`] });
   imports.add("javax.persistence.Table");
-  
-  // Add Lombok annotations for boilerplate reduction
-  entityAnnotations.push({ name: "Data" });
-  imports.add("lombok.Data");
-  entityAnnotations.push({ name: "NoArgsConstructor" });
-  imports.add("lombok.NoArgsConstructor");
-  entityAnnotations.push({ name: "AllArgsConstructor" });
-  imports.add("lombok.AllArgsConstructor");
 
-
-  const fields = feature.fields.map((f) => transformSpecField(f as FieldIR, imports));
+  const fields = feature.fields.map((f) => transformSpecField(f as SpecFieldIR, imports));
   const relations = feature.relations?.map((r) => transformSpecRelation(r, imports)) ?? [];
   
   const allFields = [...fields, ...relations];
@@ -180,10 +153,9 @@ export function transformEntity(
     className: entityName,
     imports,
     annotations: entityAnnotations,
-    accessModifier: "public",
-    type: "class",
+    type: "data class",
     fields: allFields,
-    methods: [], // Methods can be added in another step or by other transformers
+    functions: [],
     tableName: tableName,
     idField: idField,
   };
