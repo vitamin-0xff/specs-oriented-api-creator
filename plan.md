@@ -147,7 +147,7 @@ Create a resolved, framework-neutral model.
 
 ---
 
-## 8. Phase 5 – Transformer Pipeline
+## 8. Phase 5 – Transformer Pipeline [DONE]
 
 ### Goal
 Incrementally enrich IR with Spring-aware semantics.

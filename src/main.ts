@@ -1,5 +1,6 @@
 import { generateIR } from "./ir/ir-generator.ts";
 import { parseAndValidateSpec } from "./parser/index.ts";
+import { transformApplication } from "./transformers/pipleline.ts";
 
 const specPath = Deno.args[0];
 
@@ -14,8 +15,15 @@ try {
   console.log(`Features: ${spec.features.length}`);
 
   const ir = generateIR(spec);
-  console.log(JSON.stringify(ir));
+  console.log(ir);
   console.log(`Generated IR for ${ir.features.length} feature(s)`);
+
+  const transformedFeatures = transformApplication(ir.features);
+
+  console.log("Applied Spring-aware transformers successfully");
+  console.log(`Transformed ${transformedFeatures.length} feature(s)`);
+  console.log(transformedFeatures);
+
 
 } catch (err: unknown) {
   console.error(err?.message ?? "An unknown error occurred");

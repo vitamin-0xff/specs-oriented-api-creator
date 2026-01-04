@@ -1,0 +1,29 @@
+Raw IR (Phase 3)
+      |
+      v
++----------------------+
+|  Entity Transformer  | -> Adds JPA annotations, ID strategies
++----------------------+
+      |
+      v
++----------------------+
+| Repository Transformer| -> Method naming, pagination flags
++----------------------+
+      |
+      v
++----------------------+
+|  Service Transformer | -> Transactional metadata, exceptions
++----------------------+
+      |
+      v
++----------------------+
+| Controller Transformer| -> REST mappings, requestBody, validation
++----------------------+
+      |
+      v
++----------------------+
+| Security Transformer | -> Role mapping, endpoint-level rules
++----------------------+
+      |
+      v
+Spring-aware IR ready for Code Generators
