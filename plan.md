@@ -186,7 +186,7 @@ Generate readable Spring Boot source code.
 - [ ] Choose templating strategy (string templates or engine)
 - [ ] Implement generators:
   - EntityGenerator [DONE]
-  - RepositoryGenerator
+  - RepositoryGenerator [DONE]
   - ServiceGenerator
   - ControllerGenerator
   - SecurityGenerator

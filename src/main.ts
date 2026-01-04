@@ -1,6 +1,7 @@
 import { generateIR } from "./ir/ir-generator.ts";
 import { parseAndValidateSpec } from "./parser/index.ts";
 import { transformApplication } from "./transformers/pipleline.ts";
+import { generateRepository } from "./generators/repository.generator.ts";
 import { generateEntity } from "./generators/entity.generator.ts";
 
 const specPath = Deno.args[0];
@@ -30,6 +31,7 @@ try {
   // Generate Entities
   for (const feature of transformedFeatures) {
     await generateEntity(feature, outputPath, ir.basePackage);
+    await generateRepository(feature, outputPath, ir.basePackage);
   }
 
 
