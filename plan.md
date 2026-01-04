@@ -83,7 +83,7 @@ Define the **frozen v1 specification model** used by frontend and backend.
 
 ---
 
-## 5. Phase 2 – JSON Schema & Validation
+## 5. Phase 2 – JSON Schema & Validation [DONE]
 
 ### Goal
 Guarantee spec correctness before parsing.
