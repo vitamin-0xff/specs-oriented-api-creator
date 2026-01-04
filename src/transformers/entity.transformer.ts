@@ -12,7 +12,7 @@ export class EntityTransformer
           ...f,
           // special metadata for codegen
           generated: true,
-          annotation: "@Id @GeneratedValue",
+          annotation: "@Id @GeneratedValue(strategy = GenerationType.IDENTITY)",
         } as FieldIR & { generated: boolean; annotation: string };
       }
       return f;
