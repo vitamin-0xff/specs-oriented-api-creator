@@ -1,46 +1,24 @@
-import { generateIR } from "./ir/ir-generator.ts";
-import { parseAndValidateSpec } from "./parser/index.ts";
-import { transformApplication } from "./transformers/pipleline.ts";
-import { generateRepository } from "./generators/repository.generator.ts";
-import { generateEntity } from "./generators/entity.generator.ts";
-import { generateService  } from "./generators/service.generator.ts";
-import { generateController } from "./generators/controller.generator.ts";
+import { parseFeature } from './parser/validation-pipeline.ts';
+import { readContentFromFile } from './utils/load-content-file.ts'
 
 const specPath = Deno.args[0];
-const outputPath = Deno.args[1] ?? "./generated";
+const dtoSpec = Deno.args[1]
 
-
-if (!specPath) {
-  console.error("Usage: deno run --allow-write --allow-read src/main.ts <spec.json> [outputPath]");
+if (!specPath || !dtoSpec) {
+  console.error("Usage: deno run src/main.ts <spec.json> <dtospecs.json>");
   Deno.exit(1);
 }
 
 try {
-  const spec = await parseAndValidateSpec(specPath);
-  console.log("Specification loaded successfully");
-  console.log(`Features: ${spec.features.length}`);
+  const content = await readContentFromFile(specPath);
+  const dtos = await readContentFromFile(dtoSpec);
 
-  const ir = generateIR(spec);
-  console.log(ir);
-  console.log(`Generated IR for ${ir.features.length} feature(s)`);
-
-  const transformedFeatures = transformApplication(ir.features);
-
-  console.log("Applied Spring-aware transformers successfully");
-  console.log(`Transformed ${transformedFeatures.length} feature(s)`);
-  console.log(transformedFeatures);
-
-  // Generate Entities
-  for (const feature of transformedFeatures) {
-    await generateEntity(feature, outputPath, ir.basePackage);
-    await generateRepository(feature, outputPath, ir.basePackage);
-    await generateService(feature, outputPath, ir.basePackage);
-    await generateController(feature, outputPath, ir.basePackage);
-  }
-
+  const returnType = parseFeature(content, dtos);
+  console.log(returnType);
 
 } catch (err: unknown) {
   console.error(err?.message ?? "An unknown error occurred");
+  console.log((err as Error).stack);
   Deno.exit(1);
 }
 

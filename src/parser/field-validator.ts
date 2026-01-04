@@ -1,4 +1,4 @@
-import { unique } from "../../utils/unique.ts";
+import { unique } from "../utils/unique.ts";
 import { FeatureIR } from "./specs-validators.ts";
 
 export function validateEntityFields(feature: FeatureIR) {

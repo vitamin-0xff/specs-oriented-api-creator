@@ -1,0 +1,20 @@
+  [
+    {
+      "name": "UserCreateDTO",
+      "sourceEntity": "User",
+      "exclude": ["id", "createdAt", "status"]
+    },
+    {
+      "name": "UserUpdateDTO",
+      "sourceEntity": "User",
+      "exclude": ["id", "createdAt"]
+    },
+    {
+      "name": "UserReadDTO",
+      "sourceEntity": "User",
+      "exclude": ["password"],
+      "relations": [
+        {"field": "roles", "mode": "ID", "dtoRef": "RoleReadDTO"}
+      ]
+    }
+  ]

@@ -1,0 +1,118 @@
+{
+  "name": "User",
+  "tableName": "users",
+  "fields": [
+    {
+      "name": "id",
+      "type": "Id",
+      "concreteType": "UUID",
+      "advanced": {
+        "generationStrategy": "UUID"
+      }
+    },
+    {
+      "name": "email",
+      "type": "String",
+      "unique": true,
+      "advanced": {
+        "validation": {
+          "regex": "^[^@]+@[^@]+\\.[^@]+$"
+        }
+      }
+    },
+    {
+      "name": "password",
+      "type": "String",
+      "advanced": {
+        "validation": {
+          "minLength": 8
+        }
+      }
+    },
+    {
+      "name": "status",
+      "type": "Enum",
+      "values": ["ACTIVE", "DISABLED", "PENDING"]
+    },
+    {
+      "name": "createdAt",
+      "type": "Date",
+      "advanced": {
+        "defaultValue": "CURRENT_TIMESTAMP"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "kind": "Parent",
+      "name": "roles",
+      "type": "ManyToMany",
+      "targetEntity": "Role",
+      "fetch": "LAZY",
+      "cascade": ["MERGE"]
+    }
+  ],
+  "operations": [
+    {
+      "name": "getById",
+      "type": "CRUD",
+      "method": "GET",
+      "path": "/users/{id}",
+      "pathParams": [
+        {"name": "id", "type": "UUID", "required": true}
+      ],
+      "output": "UserReadDTO",
+      "readOnly": true
+    },
+    {
+      "name": "search",
+      "type": "CUSTOM",
+      "method": "GET",
+      "path": "/users",
+      "queryParams": [
+        {"name": "email", "type": "String"},
+        {"name": "status", "type": "String"}
+      ],
+      "isArray": true,
+      "output": "UserReadDTO",
+      "readOnly": true
+    },
+    {
+      "name": "create",
+      "type": "CRUD",
+      "method": "POST",
+      "path": "/users",
+      "input": "UserCreateDTO",
+      "output": "UserReadDTO",
+      "transactional": true
+    },
+    {
+      "name": "update",
+      "type": "CRUD",
+      "method": "PUT",
+      "path": "/users/{id}",
+      "pathParams": [
+        {"name": "id", "type": "UUID", "required": true}
+      ],
+      "input": "UserUpdateDTO",
+      "output": "UserReadDTO",
+      "transactional": true
+    },
+    {
+      "name": "delete",
+      "type": "CRUD",
+      "method": "DELETE",
+      "path": "/users/{id}",
+      "pathParams": [
+        {"name": "id", "type": "UUID", "required": true}
+      ],
+      "transactional": true
+    }
+  ],
+  "defaultRoles": ["ADMIN"],
+  "advanced": {
+    "softDelete": true,
+    "timestamps": true,
+    "versioning": true
+  }
+}
