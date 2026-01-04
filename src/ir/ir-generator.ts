@@ -5,7 +5,6 @@ import {
   RepositoryOperationIR,
   ServiceMethodIR,
   EndpointIR,
-  FieldIR,
   EntityIR,
 } from "./index.ts";
 

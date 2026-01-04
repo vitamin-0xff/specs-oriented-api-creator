@@ -7,6 +7,11 @@ export type PrimitiveFieldType =
   | "date"
   | "datetime";
 
+  export interface EnumType {
+    name: string;
+    values: string[];
+  }
+
 export type ReferenceCardinality =
   | "one-to-one"
   | "one-to-many"

@@ -14,11 +14,25 @@ export interface ServiceMethodIR {
 }
 
 export interface EndpointIR {
-  name: string;
-  method: "GET" | "POST" | "PUT" | "DELETE";
-  path: string;
-  serviceMethod: ServiceMethodIR;
-  requestBody: boolean;
+    name: string;
+    method: "GET" | "POST" | "PUT" | "DELETE";
+    path: string;
+    serviceMethod: ServiceMethodIR;
+    requestBody: boolean;
+    queryParams?: { name: string; type: string }[];
+    pathParams?: { name: string; type: string }[];
+    bodyParams?: { name: string; type: string }[]; // Optional if requestBody=true
+}
+
+export interface EndpointIR {
+    name: string;
+    method: "GET" | "POST" | "PUT" | "DELETE";
+    path: string;
+    serviceMethod: ServiceMethodIR;
+    requestBody: boolean;
+    queryParams?: { name: string; type: string }[];
+    pathParams?: { name: string; type: string }[];
+    bodyParams?: { name: string; type: string }[]; // Optional if requestBody=true
 }
 
 export interface FeatureIR {

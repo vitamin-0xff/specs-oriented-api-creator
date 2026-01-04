@@ -4,6 +4,7 @@ import { transformApplication } from "./transformers/pipleline.ts";
 import { generateRepository } from "./generators/repository.generator.ts";
 import { generateEntity } from "./generators/entity.generator.ts";
 import { generateService  } from "./generators/service.generator.ts";
+import { generateController } from "./generators/controller.generator.ts";
 
 const specPath = Deno.args[0];
 const outputPath = Deno.args[1] ?? "./generated";
@@ -34,6 +35,7 @@ try {
     await generateEntity(feature, outputPath, ir.basePackage);
     await generateRepository(feature, outputPath, ir.basePackage);
     await generateService(feature, outputPath, ir.basePackage);
+    await generateController(feature, outputPath, ir.basePackage);
   }
 
 
